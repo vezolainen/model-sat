@@ -5,7 +5,7 @@ clear; close all; clc;
 
 % Initialize constellation
 fprintf('Initializing constellation...\n');
-%constellation = Constellation('StarLink');
+%constellation = Constellation('Starlink');
 %constellation = Constellation('singlePolarGlobal');
 %constellation = Constellation('singlePolar');
 %constellation = Constellation('biWalkerGlobal');
@@ -32,7 +32,7 @@ fprintf('Found %d triangles\n', size(tri,1));
 
 % Adjacency matrix for the vertices
 fprintf('Building adjacency matrix...\n');
-adjacency = sparce(N, N);
+adjacency = sparse(N, N);
 for iTriangle = 1:size(tri, 1)
 	v1 = tri(iTriangle, 1);
 	v2 = tri(iTriangle, 2);
@@ -50,8 +50,8 @@ end
 adjacency = adjacency - diag(diag(adjacency));
 
 degrees = full(sum(adjacency, 2));
-fprintf('Maximum degree: %d\n', max(degree));
-fprintf('Average degree: %.2f\n', mean(degree));
+fprintf('Maximum degree: %d\n', max(degrees));
+fprintf('Average degree: %.2f\n', mean(degrees));
 
 function [colors, numColors] = dsaturColoring(adjacency, N)
 	% DSATUR (Degree of Saturation) coloring algorithm
@@ -82,8 +82,8 @@ function [colors, numColors] = dsaturColoring(adjacency, N)
 		
 		% Assign smallest available color
 		color = 1;
-		while ismember(color, used_colors)
-			color = color + 1
+		while ismember(color, usedColors)
+			color = color + 1;
 		end
 		colors(v) = color;
 		uncolored(v) = false;
@@ -94,6 +94,7 @@ function [colors, numColors] = dsaturColoring(adjacency, N)
 				% Check if the neighbour sees a new color
 				nbrsU = find(adjacency(u, :));
 				colorsAroundU = unique(colors(nbrsU(colors(nbrsU) > 0)));
+				saturation(u) = length(colorsAroundU);
 			end
 		end
 	end
@@ -107,7 +108,8 @@ fprintf('Using DSATUR coloring...\n');
 
 % Verify the coloring
 fprintf('Verifying the coloring...\n');
-for i = i:N
+valid = true;
+for i = 1:N
 	neighbours = find(adjacency(i, :));
 	if any(colors(neighbours) == colors(i))
 		fprintf('ERROR: Vertex %d shares color with neighbour!\n', i);
@@ -124,7 +126,7 @@ end
 for colorIdx = 1:numColors
 	count = sum(colors == colorIdx);
 	fprintf('  Color %2d: %4d vertices (%.1f%%)\n',...
-	colorIdx, count, 100 * count / n);
+	colorIdx, count, 100 * count / N);
 end
 
 % Visualization with random colormap and some statistics
@@ -132,7 +134,7 @@ colorMap = hsv(numColors);
 shuffleOrder = randperm(numColors);
 colorMap = colorMap(shuffleOrder, :);
 
-vertexColors = cmap(colors, :);
+vertexColors = colorMap(colors, :);
 
 figure('Position', [100, 100, 1400, 600]);
 subplot(1, 3, 1);
@@ -162,7 +164,7 @@ light('Position', [1, 1, 1]);
 lighting gouraud;
 
 subplot(1, 3, 3);
-colorCounts = histc(colora, 1:numColors);
+colorCounts = histc(colors, 1:numColors);
 bar(1:numColors, colorCounts);
 xlabel('Color Index');
 ylabel('Number of Vertices');
